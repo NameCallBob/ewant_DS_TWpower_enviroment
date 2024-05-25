@@ -1,47 +1,29 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from data import Data
 
-# 匯入電力相關資料
-df = pd.read_csv("經濟部能源署_電力供給月資料.csv")
+# 分析之程式碼(做R語言之輸出驗證用)
 
-# 依照資料欄位可知，電力發電分為 台電、民營、自用
-columns_name = ["台電發電量","民營電廠發電量","自用發電設備發電量","全國發電量"]
-result_columns = [[],[],[],[]]
+# 台電資料
+data_power = Data.TaiwanPowerGenerate()[3]
+data_CO2 = Data.new_report_CO2_Data()
 
-result_year_month = [[],[]]
-# 將日期切割
-for index , row in df.iterrows():
-    str_data = str(row["日期(年/月)"])
-    result_year_month[0].append(str_data[0:4])
-    result_year_month[1].append(str_data[4:6])
-    
-df["年"] = result_year_month[0]
-df["月"] = result_year_month[1]
+data_power = data_power[["全國發電量_總計", "年"]]
+data_year_power = data_power.groupby("年").sum().reset_index()
+data_year_power["year"] = data_year_power["年"]
+data_year_power = data_year_power.drop(columns="年")
 
-for i in df.columns:
-    if i =="年" or i =="月":
-        for j in range(len(result_columns)):
-            result_columns[j].append(str(i))
-    if columns_name[0] in i :
-        result_columns[0].append(str(i))
-    elif columns_name[1] in i :
-        result_columns[1].append(str(i))
-    elif columns_name[2] in i :
-        result_columns[2].append(str(i))
-    elif columns_name[3] in i :
-        result_columns[3].append(str(i))
+required_columns = ['year', 'Direct emissions (metric tons CO2e)',
+                    'Indirect energy emissions (metric tons CO2e)', 'Total emissions (metric tons CO2e)']
 
+data_CO2 = data_CO2[required_columns]
+data_year_CO2 = data_CO2.groupby('year').sum().reset_index()
 
-df_TW = df[result_columns[3]]
-df_TW_power = df[result_columns[0]]
-df_people = df[result_columns[1]]
-df_self = df[result_columns[2]]
+# 檢查兩個資料大小
+print(data_year_CO2.shape)
+print(data_year_power.shape)
 
-# data_2023 = []
-# df_TW_power[df_TW["年"] == "2023"].plot(
-#     y=df_TW_power['月']
-# )
-# plt.show()
-# 依照for迴圈輸出每個月發電量變化
-for i in df["年"].unique():
-    for i in result_columns[]
+all_data = pd.merge(data_year_CO2, data_year_power, on='year')
+print(all_data)
+# 計算皮爾森相關係數
+pearson_corr = all_data.corr(method='pearson')
